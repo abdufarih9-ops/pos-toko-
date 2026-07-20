@@ -199,11 +199,10 @@
                 <form id="form-pemasukan" onsubmit="simpanPemasukan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Tanggal</label>
-                        <!-- Event onchange ditambahkan di sini -->
                         <input type="date" id="pemasukan-tanggal" required onchange="renderPemasukan()" class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Keterangan Pemasukan</label>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Keterangan Sumber Pemasukan</label>
                         <input type="text" id="pemasukan-nama" placeholder="Contoh: Modal, Dana Tunai" required class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div>
@@ -212,7 +211,7 @@
                     </div>
                     <div class="flex gap-2">
                         <button type="submit" class="w-full bg-green-600 text-white font-medium py-2 px-4 rounded hover:bg-green-700 transition text-sm flex justify-center items-center gap-1">
-                            <i class="fa-solid fa-download"></i> Simpan
+                            <i class="fa-solid fa-download"></i> Simpan Pemasukan
                         </button>
                     </div>
                 </form>
@@ -241,20 +240,19 @@
                     
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Tanggal</label>
-                        <!-- Event onchange ditambahkan di sini -->
                         <input type="date" id="pengeluaran-tanggal" required onchange="renderPengeluaran()" class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Keperluan pengeluaran</label>
-                        <input type="text" id="pengeluaran-nama" placeholder="Contoh: Beli Es Batu" required class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Keterangan / Keperluan pengeluaran</label>
+                        <input type="text" id="pengeluaran-nama" placeholder="Contoh: Beli Es Batu, Gas LPG" required class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nominal (Rp)</label>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nominal Biaya (Rp)</label>
                         <input type="number" id="pengeluaran-biaya" placeholder="0" required class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div class="flex gap-2">
                         <button type="submit" id="btn-submit-pengeluaran" class="w-full bg-red-600 text-white font-medium py-2 px-4 rounded hover:bg-red-700 transition text-sm flex justify-center items-center gap-1">
-                            <i class="fa-solid fa-receipt"></i> <span id="teks-tombol-pengeluaran">Simpan</span>
+                            <i class="fa-solid fa-receipt"></i> <span id="teks-tombol-pengeluaran">Catat Biaya</span>
                         </button>
                         <button type="button" id="btn-batal-pengeluaran" onclick="batalEditPengeluaran()" class="hidden bg-gray-400 text-white font-medium py-2 px-3 rounded hover:bg-gray-500 transition text-sm">
                             Batal
@@ -410,7 +408,7 @@
                     <tbody id="tabel-laporan-penjualan" class="text-xs divide-y divide-gray-100"></tbody>
                 </table>
             </div>
-            
+
             <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="p-3 bg-gray-50 border-b border-gray-100"><h4 class="text-xs font-bold uppercase text-gray-500">Rincian Pemasukan Lain-lain</h4></div>
                 <table class="w-full text-left border-collapse">
@@ -456,11 +454,36 @@
         <div class="text-center border-t border-dashed pt-3 mt-3"><p>*** Terima Kasih ***</p></div>
     </div>
 
+    <!-- INISIALISASI FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYT_j7OQeuXiFZj4WLijAqzmHeWpnkSeA",
+            authDomain: "pos-toko-dcdee.firebaseapp.com",
+            projectId: "pos-toko-dcdee",
+            storageBucket: "pos-toko-dcdee.firebasestorage.app",
+            messagingSenderId: "95883269875",
+            appId: "1:95883269875:web:fdeeda869b3fe024d1c986",
+            measurementId: "G-6LFB12M48Z"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+    </script>
+
+    <!-- SCRIPT UTAMA POS -->
     <script>
         // ================= INDEXED DB INIT & VARIABLES =================
         let db;
         const dbName = "POS_Database";
-        const dbVersion = 2; // Naikkan versi DB agar object store baru terbuat
+        const dbVersion = 2;
 
         let databaseBarang = [];
         let databasePelanggan = [];
@@ -531,7 +554,6 @@
             databasePengeluaran = await getAllData(tx, 'pengeluaran') || [];
             databasePemasukan = await getAllData(tx, 'pemasukan') || []; 
 
-            // Set Data Default Apabila Kosong
             if(databaseBarang.length === 0) {
                 databaseBarang = [
                     { id: '1', nama: 'Es Teh Manis Jumbo', harga: 3000, stok: 100 },
@@ -832,15 +854,10 @@
         function renderPemasukan() {
             const tbody = document.getElementById('tabel-pemasukan'); 
             tbody.innerHTML = '';
-            
-            // Logika Penyaringan (Filter) berdasarkan input tanggal
-            const tanggalDipilih = document.getElementById('pemasukan-tanggal').value || dapatkanTanggalLokalSaja(new Date());
-            const dataDitampilkan = databasePemasukan.filter(p => p.tanggalSaja === tanggalDipilih);
-            
-            dataDitampilkan.forEach(p => {
+            databasePemasukan.forEach(p => {
                 tbody.innerHTML += `
                     <tr class="border-b">
-                        <td class="p-3">${p.waktuText}</td>
+                        <td class="p-3">${p.tanggalSaja} <br><span class="text-xs text-gray-500">${p.jamSaja || ''}</span></td>
                         <td class="p-3 font-medium">${p.nama}</td>
                         <td class="p-3 text-right font-semibold text-green-600">${formatRupiah(p.biaya)}</td>
                         <td class="p-3 text-center">
@@ -848,35 +865,28 @@
                         </td>
                     </tr>`;
             });
-
-            if(dataDitampilkan.length === 0) {
-                 tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 italic">Tidak ada catatan pemasukan pada tanggal ${tanggalDipilih}.</td></tr>`;
-            }
         }
 
         async function simpanPemasukan(e) {
             e.preventDefault();
+            const tanggalValue = document.getElementById('pemasukan-tanggal').value;
             const namaValue = document.getElementById('pemasukan-nama').value.trim();
             const biayaValue = parseFloat(document.getElementById('pemasukan-biaya').value);
-            const tanggalInput = document.getElementById('pemasukan-tanggal').value;
-            
             let sekarang = new Date();
-            let jamSaja = sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
 
             databasePemasukan.push({
                 id: Date.now().toString(),
                 tanggalIso: sekarang.toISOString(),
-                tanggalSaja: tanggalInput,
-                jamSaja: jamSaja,
-                waktuText: `${tanggalInput} ${jamSaja}`,
+                tanggalSaja: tanggalValue,
+                jamSaja: sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
+                waktuText: tanggalValue + ' ' + sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
                 nama: namaValue,
                 biaya: biayaValue
             });
 
             alert('Pemasukan berhasil dicatat!');
-            document.getElementById('form-pemasukan').reset();
-            // Kembalikan ke tanggal hari ini setelah reset
-            document.getElementById('pemasukan-tanggal').value = dapatkanTanggalLokalSaja(new Date());
+            document.getElementById('pemasukan-nama').value = '';
+            document.getElementById('pemasukan-biaya').value = '';
 
             await sinkronisasiStorage(); 
             renderPemasukan();
@@ -896,15 +906,10 @@
         function renderPengeluaran() {
             const tbody = document.getElementById('tabel-pengeluaran'); 
             tbody.innerHTML = '';
-
-            // Logika Penyaringan (Filter) berdasarkan input tanggal
-            const tanggalDipilih = document.getElementById('pengeluaran-tanggal').value || dapatkanTanggalLokalSaja(new Date());
-            const dataDitampilkan = databasePengeluaran.filter(p => p.tanggalSaja === tanggalDipilih);
-
-            dataDitampilkan.forEach(p => {
+            databasePengeluaran.forEach(p => {
                 tbody.innerHTML += `
                     <tr class="border-b">
-                        <td class="p-3">${p.waktuText}</td>
+                        <td class="p-3">${p.tanggalSaja} <br><span class="text-xs text-gray-500">${p.jamSaja || ''}</span></td>
                         <td class="p-3 font-medium">${p.nama}</td>
                         <td class="p-3 text-right font-semibold text-red-600">${formatRupiah(p.biaya)}</td>
                         <td class="p-3 text-center space-x-2">
@@ -913,29 +918,22 @@
                         </td>
                     </tr>`;
             });
-
-            if(dataDitampilkan.length === 0) {
-                 tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400 italic">Tidak ada catatan pengeluaran pada tanggal ${tanggalDipilih}.</td></tr>`;
-            }
         }
 
         async function simpanPengeluaran(e) {
             e.preventDefault();
             const idEdit = document.getElementById('pengeluaran-id-edit').value;
+            const tanggalValue = document.getElementById('pengeluaran-tanggal').value;
             const namaValue = document.getElementById('pengeluaran-nama').value.trim();
             const biayaValue = parseFloat(document.getElementById('pengeluaran-biaya').value);
-            const tanggalInput = document.getElementById('pengeluaran-tanggal').value;
-            
             let sekarang = new Date();
-            let jamSaja = sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
 
             if (idEdit) {
                 const index = databasePengeluaran.findIndex(p => p.id === idEdit);
                 if (index !== -1) {
+                    databasePengeluaran[index].tanggalSaja = tanggalValue;
                     databasePengeluaran[index].nama = namaValue;
                     databasePengeluaran[index].biaya = biayaValue;
-                    databasePengeluaran[index].tanggalSaja = tanggalInput;
-                    databasePengeluaran[index].waktuText = `${tanggalInput} ${databasePengeluaran[index].jamSaja}`;
                     alert('Data pengeluaran berhasil diperbarui!');
                 }
                 batalEditPengeluaran();
@@ -943,15 +941,15 @@
                 databasePengeluaran.push({
                     id: Date.now().toString(),
                     tanggalIso: sekarang.toISOString(),
-                    tanggalSaja: tanggalInput,
-                    jamSaja: jamSaja,
-                    waktuText: `${tanggalInput} ${jamSaja}`,
+                    tanggalSaja: tanggalValue,
+                    jamSaja: sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
+                    waktuText: tanggalValue + ' ' + sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
                     nama: namaValue,
                     biaya: biayaValue
                 });
                 alert('Pengeluaran berhasil dicatat!');
-                document.getElementById('form-pengeluaran').reset();
-                document.getElementById('pengeluaran-tanggal').value = dapatkanTanggalLokalSaja(new Date());
+                document.getElementById('pengeluaran-nama').value = '';
+                document.getElementById('pengeluaran-biaya').value = '';
             }
 
             await sinkronisasiStorage(); 
@@ -963,9 +961,9 @@
             const dataDipilih = databasePengeluaran.find(p => p.id === id);
             if (dataDipilih) {
                 document.getElementById('pengeluaran-id-edit').value = dataDipilih.id;
+                document.getElementById('pengeluaran-tanggal').value = dataDipilih.tanggalSaja;
                 document.getElementById('pengeluaran-nama').value = dataDipilih.nama;
                 document.getElementById('pengeluaran-biaya').value = dataDipilih.biaya;
-                document.getElementById('pengeluaran-tanggal').value = dataDipilih.tanggalSaja;
 
                 document.getElementById('teks-tombol-pengeluaran').innerText = "Perbarui Biaya";
                 const btnSubmit = document.getElementById('btn-submit-pengeluaran');
@@ -974,15 +972,13 @@
 
                 document.getElementById('btn-batal-pengeluaran').classList.remove('hidden');
                 document.getElementById('form-pengeluaran').scrollIntoView({ behavior: 'smooth' });
-                
-                // Memicu render ulang tabel dengan tanggal yang diedit
-                renderPengeluaran();
             }
         }
 
         function batalEditPengeluaran() {
-            document.getElementById('form-pengeluaran').reset();
             document.getElementById('pengeluaran-id-edit').value = "";
+            document.getElementById('pengeluaran-nama').value = "";
+            document.getElementById('pengeluaran-biaya').value = "";
             document.getElementById('pengeluaran-tanggal').value = dapatkanTanggalLokalSaja(new Date());
 
             document.getElementById('teks-tombol-pengeluaran').innerText = "Catat Biaya";
@@ -992,7 +988,6 @@
             btnSubmit.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-gray-900');
 
             document.getElementById('btn-batal-pengeluaran').classList.add('hidden');
-            renderPengeluaran();
         }
 
         async function hapusPengeluaran(id) { 
@@ -1039,13 +1034,13 @@
             
             const tbodyPenjualan = document.getElementById('tabel-laporan-penjualan');
             const tbodyPengeluaran = document.getElementById('tabel-laporan-pengeluaran');
-            const tbodyRincianBarang = document.getElementById('tabel-laporan-rincian-barang');
             const tbodyPemasukan = document.getElementById('tabel-laporan-pemasukan');
+            const tbodyRincianBarang = document.getElementById('tabel-laporan-rincian-barang');
             
             tbodyPenjualan.innerHTML = '';
             tbodyPengeluaran.innerHTML = '';
-            tbodyRincianBarang.innerHTML = '';
             tbodyPemasukan.innerHTML = '';
+            tbodyRincianBarang.innerHTML = '';
 
             let totalOmzet = 0;
             let totalBiaya = 0;
@@ -1118,7 +1113,6 @@
                 }
             });
 
-            // Kalkulasi dan Render Rincian Pemasukan Lain-lain
             databasePemasukan.forEach(p => {
                 if(dalamRentang(p.tanggalSaja)) {
                     totalPemasukanLain += p.biaya;
@@ -1130,10 +1124,6 @@
                         </tr>`;
                 }
             });
-
-            if (tbodyPemasukan.innerHTML === '') {
-                 tbodyPemasukan.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-400 italic">Tidak ada catatan pemasukan lain pada rentang tanggal ini.</td></tr>`;
-            }
 
             document.getElementById('laporan-total-omzet').innerText = formatRupiah(totalOmzet);
             document.getElementById('laporan-total-pemasukan-lain').innerText = formatRupiah(totalPemasukanLain);
@@ -1162,7 +1152,7 @@
 
         // ================= LOGIC REKAP PELANGGAN =================
         function renderRekap() {
-            const inputBulan = document.getElementById('rekap-bulan-input').value; // Format: YYYY-MM
+            const inputBulan = document.getElementById('rekap-bulan-input').value; 
             let tanggalAcuan = inputBulan ? `${inputBulan}-01` : dapatkanTanggalLokalSaja(new Date());
             
             const bagianTanggal = tanggalAcuan.split('-'); 
@@ -1242,7 +1232,7 @@
             const omzet = document.getElementById('laporan-total-omzet').innerText;
             const pemasukanLain = document.getElementById('laporan-total-pemasukan-lain').innerText;
             const pengeluaran = document.getElementById('laporan-total-pengeluaran').innerText;
-            const laba = document.getElementById('laporan-laba-bersih').innerText;
+            const laba = document.getElementById('laporan-laba-netto' ? 'laporan-laba-netto' : 'laporan-laba-bersih').innerText;
 
             doc.text(`Total Penjualan / Omzet: ${omzet}`, 14, 30);
             doc.text(`Total Pemasukan Lain: ${pemasukanLain}`, 14, 36);
@@ -1261,7 +1251,6 @@
             doc.setFontSize(16);
             doc.text(`Rekap Pembelian Harian Pelanggan - Bulan: ${bulanInput}`, 14, 15);
             
-            // Konversi elemen HTML Tabel Pelanggan ke PDF
             doc.autoTable({
                 html: '#tabel-rekap-export',
                 startY: 20,
