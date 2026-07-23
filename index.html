@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS Toko PWA</title>
+    <title>POS Toko PWA - Firebase</title>
     
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,14 +39,19 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
 
+    <!-- Indikator Status Sinkronisasi Cloud -->
+    <div id="sync-status" class="bg-blue-600 text-white px-4 py-1 text-center text-xs font-semibold no-print flex justify-center items-center gap-2">
+        <i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan ke Firebase Cloud...
+    </div>
+
     <div id="pwa-install-banner" class="hidden bg-yellow-500 text-white px-4 py-2 text-center text-sm font-bold flex justify-between items-center no-print">
         <span><i class="fa-solid fa-mobile-screen-button mr-2"></i> Pasang aplikasi di layar utama HP Anda!</span>
-        <button onclick="pemicuInstallPWA()" class="bg-white text-yellow-600 px-3 py-1 rounded text-xs uppercase font-black shadow shadow-md">Pasang</button>
+        <button onclick="pemicuInstallPWA()" class="bg-white text-yellow-600 px-3 py-1 rounded text-xs uppercase font-black shadow">Pasang</button>
     </div>
 
     <nav class="bg-blue-600 text-white shadow-md no-print">
         <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
-            <h1 class="text-xl font-bold"><i class="fa-solid fa-cash-register mr-2"></i> POS Toko Lengkap</h1>
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-cash-register mr-2"></i> POS Toko (Firebase)</h1>
             <div class="flex flex-wrap gap-1">
                 <button onclick="gantiTab('kasir')" class="nav-btn bg-blue-700 px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-800 transition"><i class="fa-solid fa-shopping-cart mr-1"></i> Kasir</button>
                 <button onclick="gantiTab('stok')" class="nav-btn px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition"><i class="fa-solid fa-boxes-stacked mr-1"></i> Stok</button>
@@ -199,7 +204,6 @@
                 <form id="form-pemasukan" onsubmit="simpanPemasukan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Tanggal</label>
-                        <!-- Event onchange ditambahkan di sini -->
                         <input type="date" id="pemasukan-tanggal" required onchange="renderPemasukan()" class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div>
@@ -241,7 +245,6 @@
                     
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Tanggal</label>
-                        <!-- Event onchange ditambahkan di sini -->
                         <input type="date" id="pengeluaran-tanggal" required onchange="renderPengeluaran()" class="w-full bg-gray-50 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none">
                     </div>
                     <div>
@@ -305,7 +308,7 @@
             </div>
         </div>
 
-        <!-- TAB REKAP PELANGGAN (MENU BARU) -->
+        <!-- TAB REKAP PELANGGAN -->
         <div id="tab-rekap" class="tab-content hidden space-y-4">
             <div class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center space-x-2">
@@ -352,7 +355,6 @@
                 <div class="flex flex-wrap gap-2">
                     <button onclick="cetakPDFLaporan()" class="bg-red-500 text-white text-xs font-medium py-2 px-3 rounded shadow hover:bg-red-600 transition"><i class="fa-solid fa-file-pdf mr-1"></i> Simpan PDF</button>
                     <button onclick="kirimWALaporan()" class="bg-emerald-500 text-white text-xs font-medium py-2 px-3 rounded shadow hover:bg-emerald-600 transition"><i class="fa-brands fa-whatsapp mr-1"></i> Kirim WA</button>
-                    <button onclick="bersihkanSemuaData()" class="bg-gray-200 text-gray-400 text-xs font-medium py-2 px-3 rounded hover:bg-gray-300 transition"><i class="fa-solid fa-trash-can mr-1"></i> Reset</button>
                 </div>
             </div>
 
@@ -456,11 +458,25 @@
         <div class="text-center border-t border-dashed pt-3 mt-3"><p>*** Terima Kasih ***</p></div>
     </div>
 
-    <script>
-        // ================= INDEXED DB INIT & VARIABLES =================
-        let db;
-        const dbName = "POS_Database";
-        const dbVersion = 2; // Naikkan versi DB agar object store baru terbuat
+    <!-- Firebase SDK (Modular v10) & Konfigurasi Anda -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Konfigurasi Firebase dari proyek Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYT_j7OQeuXiFZj4WLijAqzmHeWpnkSeA",
+            authDomain: "pos-toko-dcdee.firebaseapp.com",
+            databaseURL: "https://pos-toko-dcdee-default-rtdb.firebaseio.com",
+            projectId: "pos-toko-dcdee",
+            storageBucket: "pos-toko-dcdee.firebasestorage.app",
+            messagingSenderId: "95883269875",
+            appId: "1:95883269875:web:fdeeda869b3fe024d1c986",
+            measurementId: "G-6LFB12M48Z"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
         let databaseBarang = [];
         let databasePelanggan = [];
@@ -470,17 +486,23 @@
         let keranjang = [];
 
         window.onload = async function() {
-            await initDB();
-            await loadDataFromDB();
+            try {
+                await loadDataFromFirebase();
+                document.getElementById('sync-status').className = "bg-green-600 text-white px-4 py-1 text-center text-xs font-semibold no-print flex justify-center items-center gap-2";
+                document.getElementById('sync-status').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Terhubung ke Firebase Cloud';
+                setTimeout(() => document.getElementById('sync-status').classList.add('hidden'), 3000);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('sync-status').className = "bg-red-600 text-white px-4 py-1 text-center text-xs font-semibold no-print";
+                document.getElementById('sync-status').innerText = 'Gagal terhubung ke Firebase. Periksa koneksi atau aturan keamanan Firestore.';
+            }
             
             setTanggalHariIni();
             setBulanRekapSekarang(); 
             
-            // Set default tanggal hari ini di form pemasukan dan pengeluaran
             document.getElementById('pemasukan-tanggal').value = dapatkanTanggalLokalSaja(new Date());
             document.getElementById('pengeluaran-tanggal').value = dapatkanTanggalLokalSaja(new Date());
 
-            // Render UI
             renderBarang();
             renderPelanggan();
             renderPilihanKasir();
@@ -490,118 +512,61 @@
             renderRekap();
         };
 
-        function setBulanRekapSekarang() {
+        async function loadDataFromFirebase() {
+            const snapBarang = await getDocs(collection(db, "barang"));
+            databaseBarang = snapBarang.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+
+            const snapPelanggan = await getDocs(collection(db, "pelanggan"));
+            databasePelanggan = snapPelanggan.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+
+            const snapLaporan = await getDocs(collection(db, "laporan"));
+            databaseLaporan = snapLaporan.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+
+            const snapPengeluaran = await getDocs(collection(db, "pengeluaran"));
+            databasePengeluaran = snapPengeluaran.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+
+            const snapPemasukan = await getDocs(collection(db, "pemasukan"));
+            databasePemasukan = snapPemasukan.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+
+            if(databaseBarang.length === 0) {
+                await addDoc(collection(db, "barang"), { id: '1', nama: 'Es Teh Manis Jumbo', harga: 3000, stok: 100 });
+                await addDoc(collection(db, "barang"), { id: '2', nama: 'Dimsum Ayam', harga: 10000, stok: 50 });
+                const ref = await getDocs(collection(db, "barang"));
+                databaseBarang = ref.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+            }
+            if(databasePelanggan.length === 0) {
+                await addDoc(collection(db, "pelanggan"), { id: '1', nama: 'Budi Santoso', kontak: '08123456789' });
+                const ref = await getDocs(collection(db, "pelanggan"));
+                databasePelanggan = ref.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+            }
+        }
+
+        window.setBulanRekapSekarang = function() {
             const hariIni = new Date();
             const yyyy = hariIni.getFullYear();
             const mm = String(hariIni.getMonth() + 1).padStart(2, '0');
             document.getElementById('rekap-bulan-input').value = `${yyyy}-${mm}`;
         }
 
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(dbName, dbVersion);
-
-                request.onupgradeneeded = function(event) {
-                    const database = event.target.result;
-                    if (!database.objectStoreNames.contains('barang')) database.createObjectStore('barang', { keyPath: 'id' });
-                    if (!database.objectStoreNames.contains('pelanggan')) database.createObjectStore('pelanggan', { keyPath: 'id' });
-                    if (!database.objectStoreNames.contains('laporan')) database.createObjectStore('laporan', { keyPath: 'id' });
-                    if (!database.objectStoreNames.contains('pengeluaran')) database.createObjectStore('pengeluaran', { keyPath: 'id' });
-                    if (!database.objectStoreNames.contains('pemasukan')) database.createObjectStore('pemasukan', { keyPath: 'id' }); 
-                };
-
-                request.onsuccess = function(event) {
-                    db = event.target.result;
-                    resolve(db);
-                };
-
-                request.onerror = function(event) {
-                    console.error("IndexedDB error:", event.target.errorCode);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        async function loadDataFromDB() {
-            const tx = db.transaction(['barang', 'pelanggan', 'laporan', 'pengeluaran', 'pemasukan'], 'readonly');
-            
-            databaseBarang = await getAllData(tx, 'barang') || [];
-            databasePelanggan = await getAllData(tx, 'pelanggan') || [];
-            databaseLaporan = await getAllData(tx, 'laporan') || [];
-            databasePengeluaran = await getAllData(tx, 'pengeluaran') || [];
-            databasePemasukan = await getAllData(tx, 'pemasukan') || []; 
-
-            // Set Data Default Apabila Kosong
-            if(databaseBarang.length === 0) {
-                databaseBarang = [
-                    { id: '1', nama: 'Es Teh Manis Jumbo', harga: 3000, stok: 100 },
-                    { id: '2', nama: 'Dimsum Ayam', harga: 10000, stok: 50 }
-                ];
-                await sinkronisasiStorage();
-            }
-            if(databasePelanggan.length === 0) {
-                databasePelanggan = [
-                    { id: '1', nama: 'Budi Santoso', kontak: '08123456789' }
-                ];
-                await sinkronisasiStorage();
-            }
-        }
-
-        function getAllData(tx, storeName) {
-            return new Promise((resolve) => {
-                const store = tx.objectStore(storeName);
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
-            });
-        }
-
-        async function sinkronisasiStorage() {
-            if (!db) return;
-            const tx = db.transaction(['barang', 'pelanggan', 'laporan', 'pengeluaran', 'pemasukan'], 'readwrite');
-            
-            const storeNames = ['barang', 'pelanggan', 'laporan', 'pengeluaran', 'pemasukan'];
-            const dataMaps = {
-                'barang': databaseBarang,
-                'pelanggan': databasePelanggan,
-                'laporan': databaseLaporan,
-                'pengeluaran': databasePengeluaran,
-                'pemasukan': databasePemasukan
-            };
-
-            storeNames.forEach(storeName => {
-                const store = tx.objectStore(storeName);
-                store.clear(); 
-                dataMaps[storeName].forEach(item => {
-                    if(!item.id) item.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-                    store.put(item);
-                });
-            });
-
-            return new Promise((resolve) => {
-                tx.oncomplete = resolve;
-            });
-        }
-
-        // ================= GENERAL FUNCTIONS =================
-        function dapatkanTanggalLokalSaja(dateObj) {
+        window.dapatkanTanggalLokalSaja = function(dateObj) {
             let yyyy = dateObj.getFullYear();
             let mm = String(dateObj.getMonth() + 1).padStart(2, '0');
             let dd = String(dateObj.getDate()).padStart(2, '0');
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        function setTanggalHariIni() {
+        window.setTanggalHariIni = function() {
             const hariIni = dapatkanTanggalLokalSaja(new Date());
             document.getElementById('laporan-tanggal-mulai').value = hariIni;
             document.getElementById('laporan-tanggal-akhir').value = hariIni;
             renderLaporan();
         }
 
-        function formatRupiah(angka) {
+        window.formatRupiah = function(angka) {
             return 'Rp ' + parseInt(angka).toLocaleString('id-ID');
         }
 
-        function gantiTab(tabName) {
+        window.gantiTab = function(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-blue-700'));
@@ -618,8 +583,7 @@
             renderRekap();
         }
 
-        // ================= KASIR LOGIC =================
-        function renderPilihanKasir() {
+        window.renderPilihanKasir = function() {
             const selectBarang = document.getElementById('kasir-pilih-barang');
             selectBarang.innerHTML = '<option value="">-- Pilih Barang --</option>';
             databaseBarang.forEach(b => {
@@ -641,7 +605,7 @@
             }
         }
 
-        function pilihPelangganKasir() {
+        window.pilihPelangganKasir = function() {
             const select = document.getElementById('kasir-pilih-pelanggan');
             const nama = select.value;
             const kontak = select.options[select.selectedIndex].getAttribute('data-kontak');
@@ -649,7 +613,7 @@
             document.getElementById('kasir-kontak-pembeli').value = kontak || '';
         }
 
-        function tambahKeKeranjang() {
+        window.tambahKeKeranjang = function() {
             const idBarang = document.getElementById('kasir-pilih-barang').value;
             if(!idBarang) return alert('Pilih barang dahulu!');
             const b = databaseBarang.find(item => item.id === idBarang);
@@ -664,7 +628,7 @@
             renderKeranjang();
         }
 
-        function ubahQty(id, ubah) {
+        window.ubahQty = function(id, ubah) {
             const item = keranjang.find(k => k.id === id);
             const b = databaseBarang.find(barang => barang.id === id);
             if(item) {
@@ -675,7 +639,7 @@
             renderKeranjang();
         }
 
-        function renderKeranjang() {
+        window.renderKeranjang = function() {
             const tbody = document.getElementById('tabel-keranjang');
             tbody.innerHTML = '';
             let total = 0;
@@ -704,13 +668,13 @@
             hitungKembalian();
         }
 
-        function hitungKembalian() {
+        window.hitungKembalian = function() {
             let total = keranjang.reduce((s, i) => s + (i.harga * i.qty), 0);
             let bayar = parseFloat(document.getElementById('uang-bayar').value) || 0;
             document.getElementById('uang-kembalian').innerText = formatRupiah(bayar - total < 0 ? 0 : bayar - total);
         }
 
-        async function prosesTransaksi(tipe) {
+        window.prosesTransaksi = async function(tipe) {
             if(keranjang.length === 0) return alert('Keranjang kosong!');
             let total = keranjang.reduce((s, i) => s + (i.harga * i.qty), 0);
             let bayar = parseFloat(document.getElementById('uang-bayar').value) || 0;
@@ -719,14 +683,17 @@
             let namaPembeli = document.getElementById('kasir-nama-pembeli').value.trim() || 'Pembeli Umum';
             let noHp = document.getElementById('kasir-kontak-pembeli').value.trim();
 
-            keranjang.forEach(k => {
+            for(let k of keranjang) {
                 let b = databaseBarang.find(item => item.id === k.id);
-                if(b) b.stok -= k.qty;
-            });
+                if(b) {
+                    b.stok -= k.qty;
+                    await updateDoc(doc(db, "barang", b.firestoreId), { stok: b.stok });
+                }
+            }
 
             let sekarang = new Date();
-            databaseLaporan.push({
-                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            let dataBaruLaporan = {
+                id: Date.now().toString(),
                 tanggalIso: sekarang.toISOString(),
                 tanggalSaja: dapatkanTanggalLokalSaja(sekarang), 
                 jamSaja: sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
@@ -734,9 +701,10 @@
                 pembeli: namaPembeli,
                 items: [...keranjang],
                 total: total
-            });
+            };
 
-            await sinkronisasiStorage();
+            const docRef = await addDoc(collection(db, "laporan"), dataBaruLaporan);
+            databaseLaporan.push({ firestoreId: docRef.id, ...dataBaruLaporan });
 
             let teksStrukWA = `*STRUK BELANJA TOKO*\n---------------------------\nTanggal: ${sekarang.toLocaleString('id-ID')}\nPelanggan: ${namaPembeli}\n---------------------------\n`;
             keranjang.forEach(k => { teksStrukWA += `${k.nama}\n  ${k.qty} x ${formatRupiah(k.harga)} = ${formatRupiah(k.harga * k.qty)}\n`; });
@@ -765,11 +733,10 @@
             renderPilihanKasir();
             renderLaporan();
             renderRekap();
-            alert('Transaksi Tersimpan!');
+            alert('Transaksi Tersimpan ke Firebase Cloud!');
         }
 
-        // ================= STOK LOGIC =================
-        function renderBarang() {
+        window.renderBarang = function() {
             const tbody = document.getElementById('tabel-barang'); tbody.innerHTML = '';
             databaseBarang.forEach(b => { 
                 tbody.innerHTML += `
@@ -777,31 +744,28 @@
                         <td class="p-3 font-medium">${b.nama}</td>
                         <td class="p-3 text-right">${formatRupiah(b.harga)}</td>
                         <td class="p-3 text-center"><span class="px-2 py-1 rounded text-xs font-bold ${b.stok <= 5 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${b.stok} unit</span></td>
-                        <td class="p-3 text-center"><button onclick="hapusBarang('${b.id}')" class="text-red-500 text-xs font-semibold hover:underline"><i class="fa-solid fa-trash"></i> Hapus</button></td>
+                        <td class="p-3 text-center"><button onclick="hapusBarang('${b.firestoreId}', '${b.id}')" class="text-red-500 text-xs font-semibold hover:underline"><i class="fa-solid fa-trash"></i> Hapus</button></td>
                     </tr>`; 
             });
         }
 
-        async function simpanBarang(e) {
+        window.simpanBarang = async function(e) {
             e.preventDefault();
             const nama = document.getElementById('barang-nama').value.trim();
             const harga = parseFloat(document.getElementById('barang-harga').value);
-            
-            databaseBarang.push({ 
-                id: Date.now().toString(), 
-                nama: nama, 
-                harga: harga, 
-                stok: 0 
-            });
-            
-            await sinkronisasiStorage(); 
+            const idBaru = Date.now().toString();
+
+            let dataBaru = { id: idBaru, nama: nama, harga: harga, stok: 0 };
+            const docRef = await addDoc(collection(db, "barang"), dataBaru);
+            databaseBarang.push({ firestoreId: docRef.id, ...dataBaru });
+
             document.getElementById('form-barang').reset(); 
             renderBarang();
             renderPilihanKasir();
-            alert('Barang baru berhasil terdaftar (Stok awal: 0). Silakan tambahkan kuantitas di menu Tambah Stok!');
+            alert('Barang baru berhasil disimpan ke Firebase!');
         }
 
-        async function tambahStokBarangLama(e) {
+        window.tambahStokBarangLama = async function(e) {
             e.preventDefault();
             const idBarang = document.getElementById('restock-pilih-barang').value;
             const jumlahMasuk = parseInt(document.getElementById('restock-jumlah').value);
@@ -811,7 +775,7 @@
             let barang = databaseBarang.find(b => b.id === idBarang);
             if(barang) {
                 barang.stok += jumlahMasuk;
-                await sinkronisasiStorage();
+                await updateDoc(doc(db, "barang", barang.firestoreId), { stok: barang.stok });
                 document.getElementById('form-restock').reset();
                 renderBarang();
                 renderPilihanKasir();
@@ -819,21 +783,18 @@
             }
         }
 
-        async function hapusBarang(id) { 
-            if(confirm('Hapus barang ini dari sistem?')) { 
+        window.hapusBarang = async function(firestoreId, id) { 
+            if(confirm('Hapus barang ini dari sistem Cloud?')) { 
+                await deleteDoc(doc(db, "barang", firestoreId));
                 databaseBarang = databaseBarang.filter(b => b.id !== id); 
-                await sinkronisasiStorage(); 
                 renderBarang(); 
                 renderPilihanKasir();
             } 
         }
 
-        // ================= PEMASUKAN LAIN LOGIC =================
-        function renderPemasukan() {
+        window.renderPemasukan = function() {
             const tbody = document.getElementById('tabel-pemasukan'); 
             tbody.innerHTML = '';
-            
-            // Logika Penyaringan (Filter) berdasarkan input tanggal
             const tanggalDipilih = document.getElementById('pemasukan-tanggal').value || dapatkanTanggalLokalSaja(new Date());
             const dataDitampilkan = databasePemasukan.filter(p => p.tanggalSaja === tanggalDipilih);
             
@@ -844,7 +805,7 @@
                         <td class="p-3 font-medium">${p.nama}</td>
                         <td class="p-3 text-right font-semibold text-green-600">${formatRupiah(p.biaya)}</td>
                         <td class="p-3 text-center">
-                            <button onclick="hapusPemasukan('${p.id}')" class="text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-trash"></i> Hapus</button>
+                            <button onclick="hapusPemasukan('${p.firestoreId}', '${p.id}')" class="text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-trash"></i> Hapus</button>
                         </td>
                     </tr>`;
             });
@@ -854,7 +815,7 @@
             }
         }
 
-        async function simpanPemasukan(e) {
+        window.simpanPemasukan = async function(e) {
             e.preventDefault();
             const namaValue = document.getElementById('pemasukan-nama').value.trim();
             const biayaValue = parseFloat(document.getElementById('pemasukan-biaya').value);
@@ -863,7 +824,7 @@
             let sekarang = new Date();
             let jamSaja = sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
 
-            databasePemasukan.push({
+            let dataBaru = {
                 id: Date.now().toString(),
                 tanggalIso: sekarang.toISOString(),
                 tanggalSaja: tanggalInput,
@@ -871,33 +832,31 @@
                 waktuText: `${tanggalInput} ${jamSaja}`,
                 nama: namaValue,
                 biaya: biayaValue
-            });
+            };
 
-            alert('Pemasukan berhasil dicatat!');
+            const docRef = await addDoc(collection(db, "pemasukan"), dataBaru);
+            databasePemasukan.push({ firestoreId: docRef.id, ...dataBaru });
+
+            alert('Pemasukan berhasil dicatat ke Firebase!');
             document.getElementById('form-pemasukan').reset();
-            // Kembalikan ke tanggal hari ini setelah reset
             document.getElementById('pemasukan-tanggal').value = dapatkanTanggalLokalSaja(new Date());
 
-            await sinkronisasiStorage(); 
             renderPemasukan();
             renderLaporan();
         }
 
-        async function hapusPemasukan(id) { 
-            if(confirm('Apakah Anda yakin ingin menghapus catatan pemasukan ini?')) { 
+        window.hapusPemasukan = async function(firestoreId, id) { 
+            if(confirm('Hapus catatan pemasukan ini?')) { 
+                await deleteDoc(doc(db, "pemasukan", firestoreId));
                 databasePemasukan = databasePemasukan.filter(p => p.id !== id); 
-                await sinkronisasiStorage(); 
                 renderPemasukan(); 
                 renderLaporan();
             } 
         }
 
-        // ================= PENGELUARAN LOGIC =================
-        function renderPengeluaran() {
+        window.renderPengeluaran = function() {
             const tbody = document.getElementById('tabel-pengeluaran'); 
             tbody.innerHTML = '';
-
-            // Logika Penyaringan (Filter) berdasarkan input tanggal
             const tanggalDipilih = document.getElementById('pengeluaran-tanggal').value || dapatkanTanggalLokalSaja(new Date());
             const dataDitampilkan = databasePengeluaran.filter(p => p.tanggalSaja === tanggalDipilih);
 
@@ -909,7 +868,7 @@
                         <td class="p-3 text-right font-semibold text-red-600">${formatRupiah(p.biaya)}</td>
                         <td class="p-3 text-center space-x-2">
                             <button onclick="pemicuEditPengeluaran('${p.id}')" class="text-blue-600 hover:text-blue-800 font-medium"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                            <button onclick="hapusPengeluaran('${p.id}')" class="text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-trash"></i> Hapus</button>
+                            <button onclick="hapusPengeluaran('${p.firestoreId}', '${p.id}')" class="text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-trash"></i> Hapus</button>
                         </td>
                     </tr>`;
             });
@@ -919,7 +878,7 @@
             }
         }
 
-        async function simpanPengeluaran(e) {
+        window.simpanPengeluaran = async function(e) {
             e.preventDefault();
             const idEdit = document.getElementById('pengeluaran-id-edit').value;
             const namaValue = document.getElementById('pengeluaran-nama').value.trim();
@@ -930,17 +889,24 @@
             let jamSaja = sekarang.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
 
             if (idEdit) {
-                const index = databasePengeluaran.findIndex(p => p.id === idEdit);
-                if (index !== -1) {
-                    databasePengeluaran[index].nama = namaValue;
-                    databasePengeluaran[index].biaya = biayaValue;
-                    databasePengeluaran[index].tanggalSaja = tanggalInput;
-                    databasePengeluaran[index].waktuText = `${tanggalInput} ${databasePengeluaran[index].jamSaja}`;
-                    alert('Data pengeluaran berhasil diperbarui!');
+                const itemData = databasePengeluaran.find(p => p.id === idEdit);
+                if (itemData) {
+                    itemData.nama = namaValue;
+                    itemData.biaya = biayaValue;
+                    itemData.tanggalSaja = tanggalInput;
+                    itemData.waktuText = `${tanggalInput} ${itemData.jamSaja}`;
+                    
+                    await updateDoc(doc(db, "pengeluaran", itemData.firestoreId), {
+                        nama: namaValue,
+                        biaya: biayaValue,
+                        tanggalSaja: tanggalInput,
+                        waktuText: itemData.waktuText
+                    });
+                    alert('Data pengeluaran berhasil diperbarui di Firebase!');
                 }
                 batalEditPengeluaran();
             } else {
-                databasePengeluaran.push({
+                let dataBaru = {
                     id: Date.now().toString(),
                     tanggalIso: sekarang.toISOString(),
                     tanggalSaja: tanggalInput,
@@ -948,18 +914,20 @@
                     waktuText: `${tanggalInput} ${jamSaja}`,
                     nama: namaValue,
                     biaya: biayaValue
-                });
-                alert('Pengeluaran berhasil dicatat!');
+                };
+                const docRef = await addDoc(collection(db, "pengeluaran"), dataBaru);
+                databasePengeluaran.push({ firestoreId: docRef.id, ...dataBaru });
+
+                alert('Pengeluaran berhasil dicatat ke Firebase!');
                 document.getElementById('form-pengeluaran').reset();
                 document.getElementById('pengeluaran-tanggal').value = dapatkanTanggalLokalSaja(new Date());
             }
 
-            await sinkronisasiStorage(); 
             renderPengeluaran();
             renderLaporan();
         }
 
-        function pemicuEditPengeluaran(id) {
+        window.pemicuEditPengeluaran = function(id) {
             const dataDipilih = databasePengeluaran.find(p => p.id === id);
             if (dataDipilih) {
                 document.getElementById('pengeluaran-id-edit').value = dataDipilih.id;
@@ -974,20 +942,17 @@
 
                 document.getElementById('btn-batal-pengeluaran').classList.remove('hidden');
                 document.getElementById('form-pengeluaran').scrollIntoView({ behavior: 'smooth' });
-                
-                // Memicu render ulang tabel dengan tanggal yang diedit
                 renderPengeluaran();
             }
         }
 
-        function batalEditPengeluaran() {
+        window.batalEditPengeluaran = function() {
             document.getElementById('form-pengeluaran').reset();
             document.getElementById('pengeluaran-id-edit').value = "";
             document.getElementById('pengeluaran-tanggal').value = dapatkanTanggalLokalSaja(new Date());
 
             document.getElementById('teks-tombol-pengeluaran').innerText = "Catat Biaya";
             const btnSubmit = document.getElementById('btn-submit-pengeluaran');
-            
             btnSubmit.classList.add('bg-red-600', 'hover:bg-red-700');
             btnSubmit.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-gray-900');
 
@@ -995,45 +960,46 @@
             renderPengeluaran();
         }
 
-        async function hapusPengeluaran(id) { 
-            if(confirm('Apakah Anda yakin ingin menghapus catatan pengeluaran ini?')) { 
+        window.hapusPengeluaran = async function(firestoreId, id) { 
+            if(confirm('Hapus catatan pengeluaran ini?')) { 
+                await deleteDoc(doc(db, "pengeluaran", firestoreId));
                 databasePengeluaran = databasePengeluaran.filter(p => p.id !== id); 
-                if(document.getElementById('pengeluaran-id-edit').value === id) {
-                    batalEditPengeluaran();
-                }
-                await sinkronisasiStorage(); 
+                if(document.getElementById('pengeluaran-id-edit').value === id) batalEditPengeluaran();
                 renderPengeluaran(); 
                 renderLaporan();
             } 
         }
 
-        // ================= PELANGGAN LOGIC =================
-        function renderPelanggan() {
+        window.renderPelanggan = function() {
             const tbody = document.getElementById('tabel-pelanggan'); tbody.innerHTML = '';
             databasePelanggan.forEach(p => {
                 let waNo = p.kontak.startsWith('0') ? '62' + p.kontak.slice(1) : p.kontak;
-                tbody.innerHTML += `<tr class="border-b"><td class="p-3 font-medium">${p.nama}</td><td class="p-3">${p.kontak}</td><td class="p-3 text-center flex justify-center space-x-2"><a href="https://api.whatsapp.com/send?phone=${waNo}" target="_blank" class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold hover:bg-emerald-200"><i class="fa-brands fa-whatsapp"></i> Chat WA</a><button onclick="hapusPelanggan('${p.id}')" class="text-red-500 text-xs"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr class="border-b"><td class="p-3 font-medium">${p.nama}</td><td class="p-3">${p.kontak}</td><td class="p-3 text-center flex justify-center space-x-2"><a href="https://api.whatsapp.com/send?phone=${waNo}" target="_blank" class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold hover:bg-emerald-200"><i class="fa-brands fa-whatsapp"></i> Chat WA</a><button onclick="hapusPelanggan('${p.firestoreId}', '${p.id}')" class="text-red-500 text-xs"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
-        async function simpanPelanggan(e) {
+
+        window.simpanPelanggan = async function(e) {
             e.preventDefault();
-            databasePelanggan.push({ id: Date.now().toString(), nama: document.getElementById('pelanggan-nama').value, kontak: document.getElementById('pelanggan-kontak').value });
-            await sinkronisasiStorage(); 
+            let dataBaru = { id: Date.now().toString(), nama: document.getElementById('pelanggan-nama').value, kontak: document.getElementById('pelanggan-kontak').value };
+            const docRef = await addDoc(collection(db, "pelanggan"), dataBaru);
+            databasePelanggan.push({ firestoreId: docRef.id, ...dataBaru });
+
             document.getElementById('form-pelanggan').reset(); 
             renderPelanggan();
             renderRekap();
+            alert('Pelanggan disimpan ke Firebase!');
         }
-        async function hapusPelanggan(id) { 
+
+        window.hapusPelanggan = async function(firestoreId, id) { 
             if(confirm('Hapus pelanggan?')) { 
+                await deleteDoc(doc(db, "pelanggan", firestoreId));
                 databasePelanggan = databasePelanggan.filter(p => p.id !== id); 
-                await sinkronisasiStorage(); 
                 renderPelanggan(); 
                 renderRekap();
             } 
         }
 
-        // ================= LOGIC LAPORAN =================
-        function renderLaporan() {
+        window.renderLaporan = function() {
             const tglMulai = document.getElementById('laporan-tanggal-mulai').value;
             const tglAkhir = document.getElementById('laporan-tanggal-akhir').value;
             
@@ -1059,7 +1025,7 @@
                 return tglCek >= tglMulai && tglCek <= tglAkhir;
             }
 
-            databaseLaporan.forEach((l, index) => {
+            databaseLaporan.forEach((l) => {
                 if(dalamRentang(l.tanggalSaja)) {
                     totalOmzet += l.total;
                     let detail = l.items.map(i => `${i.nama} (${i.qty})`).join(', ');
@@ -1083,7 +1049,7 @@
                             <td class="p-3 text-gray-600">${detail}</td>
                             <td class="p-3 text-right font-bold text-green-600">${formatRupiah(l.total)}</td>
                             <td class="p-3 text-center">
-                                <button onclick="hapusTransaksiNota(${index})" class="text-red-500 hover:text-red-700 font-bold text-xs">
+                                <button onclick="hapusTransaksiNota('${l.firestoreId}', '${l.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs">
                                     <i class="fa-solid fa-trash-can"></i> Hapus
                                 </button>
                             </td>
@@ -1118,7 +1084,6 @@
                 }
             });
 
-            // Kalkulasi dan Render Rincian Pemasukan Lain-lain
             databasePemasukan.forEach(p => {
                 if(dalamRentang(p.tanggalSaja)) {
                     totalPemasukanLain += p.biaya;
@@ -1141,28 +1106,31 @@
             document.getElementById('laporan-laba-bersih').innerText = formatRupiah(totalOmzet + totalPemasukanLain - totalBiaya);
         }
 
-        async function hapusTransaksiNota(indexData) {
-            if(confirm("Apakah Anda yakin ingin membatalkan/menghapus transaksi ini? Stok barang akan dikembalikan otomatis.")) {
-                let nota = databaseLaporan[indexData];
-                
-                nota.items.forEach(k => {
-                    let b = databaseBarang.find(item => item.id === k.id);
-                    if(b) b.stok += k.qty;
-                });
+        window.hapusTransaksiNota = async function(firestoreId, id) {
+            if(confirm("Batalkan/hapus transaksi ini? Stok barang akan dikembalikan otomatis.")) {
+                let nota = databaseLaporan.find(l => l.id === id);
+                if(nota) {
+                    for(let k of nota.items) {
+                        let b = databaseBarang.find(item => item.id === k.id);
+                        if(b) {
+                            b.stok += k.qty;
+                            await updateDoc(doc(db, "barang", b.firestoreId), { stok: b.stok });
+                        }
+                    }
+                }
 
-                databaseLaporan.splice(indexData, 1);
+                await deleteDoc(doc(db, "laporan", firestoreId));
+                databaseLaporan = databaseLaporan.filter(l => l.id !== id);
                 
-                await sinkronisasiStorage();
                 renderLaporan();
                 renderPilihanKasir();
                 renderRekap();
-                alert("Transaksi berhasil dihapus dan stok barang sudah disesuaikan kembali!");
+                alert("Transaksi berhasil dihapus dari Cloud dan stok dikembalikan!");
             }
         }
 
-        // ================= LOGIC REKAP PELANGGAN =================
-        function renderRekap() {
-            const inputBulan = document.getElementById('rekap-bulan-input').value; // Format: YYYY-MM
+        window.renderRekap = function() {
+            const inputBulan = document.getElementById('rekap-bulan-input').value; 
             let tanggalAcuan = inputBulan ? `${inputBulan}-01` : dapatkanTanggalLokalSaja(new Date());
             
             const bagianTanggal = tanggalAcuan.split('-'); 
@@ -1225,8 +1193,7 @@
             });
         }
 
-        // ================= PDF & WA EXPORT =================
-        function cetakPDFLaporan() {
+        window.cetakPDFLaporan = function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('portrait', 'mm', 'a4'); 
             
@@ -1235,7 +1202,7 @@
             const periode = (tglMulai === tglAkhir) ? tglMulai : `${tglMulai} s/d ${tglAkhir}`;
             
             doc.setFontSize(16);
-            doc.text("Laporan POS Toko (Ringkasan Keuangan)", 14, 15);
+            doc.text("Laporan POS Toko (Firebase Cloud)", 14, 15);
             doc.setFontSize(10);
             doc.text(`Periode Laporan: ${periode}`, 14, 22);
 
@@ -1252,16 +1219,14 @@
             doc.save(`Laporan_POS_${periode}.pdf`);
         }
 
-        function cetakPDFRekap() {
+        window.cetakPDFRekap = function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape', 'mm', 'a4'); 
-            
             const bulanInput = document.getElementById('rekap-bulan-input').value;
             
             doc.setFontSize(16);
             doc.text(`Rekap Pembelian Harian Pelanggan - Bulan: ${bulanInput}`, 14, 15);
             
-            // Konversi elemen HTML Tabel Pelanggan ke PDF
             doc.autoTable({
                 html: '#tabel-rekap-export',
                 startY: 20,
@@ -1273,7 +1238,7 @@
             doc.save(`Rekap_Pelanggan_${bulanInput}.pdf`);
         }
 
-        function kirimWALaporan() {
+        window.kirimWALaporan = function() {
             const tglMulai = document.getElementById('laporan-tanggal-mulai').value;
             const tglAkhir = document.getElementById('laporan-tanggal-akhir').value;
             const periode = (tglMulai === tglAkhir) ? tglMulai : `${tglMulai} s/d ${tglAkhir}`;
@@ -1283,7 +1248,7 @@
             const pengeluaran = document.getElementById('laporan-total-pengeluaran').innerText;
             const laba = document.getElementById('laporan-laba-bersih').innerText;
 
-            let text = `*LAPORAN TOKO*\nPeriode: ${periode}\n\n`;
+            let text = `*LAPORAN TOKO (CLOUD)*\nPeriode: ${periode}\n\n`;
             text += `💰 *Total Omzet:* ${omzet}\n`;
             text += `📥 *Pemasukan Lain:* ${pemasukanLain}\n`;
             text += `📉 *Total Pengeluaran:* ${pengeluaran}\n`;
@@ -1291,16 +1256,6 @@
 
             const encoded = encodeURIComponent(text);
             window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
-        }
-
-        function bersihkanSemuaData() {
-            if(confirm('PERINGATAN! Anda akan menghapus seluruh data transaksi, stok, pelanggan, dan pengeluaran. Lanjutkan reset total?')) {
-                const req = indexedDB.deleteDatabase(dbName);
-                req.onsuccess = function () {
-                    localStorage.clear();
-                    location.reload();
-                };
-            }
         }
     </script>
 </body>
